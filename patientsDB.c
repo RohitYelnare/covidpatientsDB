@@ -1,6 +1,7 @@
 #include<stdio.h>
 #include<stdlib.h>
 #include<string.h>
+#include<ctype.h>
 
 struct pdetails{
 	int id;
@@ -14,8 +15,9 @@ struct pdetails{
 }query, modtmp;
 
 char userletter;
-int userdate[3], usermonth, usertruedate;
+int userdate[3], usermonth, usertruedate, modify=0;
 
+//checks whether year is leap or not
 int chkleap(int year){
 	year+=2000;
 	if(year%400==0 || (year%4==0 && year%100!=0))
@@ -23,6 +25,8 @@ int chkleap(int year){
 	else
 	return 0;
 }
+
+//checks whether patient ID is UNIQUE or not
 int chkunique(int num){	
     FILE *ogfile;
 	ogfile = fopen("pdetails.txt","r");
@@ -35,57 +39,34 @@ int chkunique(int num){
 	return 1;	
 }
 
-void month_ad_31(){   
-	if (query.adm[0] < 1 || query.adm[0] > 31){
-		printf("Wrong date");
-		return;
-	}
-}
-
-void month_ad_30(){   
-	if (query.adm[0] < 1 || query.adm[0] > 30){
-		printf("Wrong date");
-		return;
-	}
-}
-
-void month_dis_31(){   
-	if (query.adm[0] < 1 || query.adm[0] > 31){
-		printf("Wrong date");
-		return;
-	}
-}
-
-void month_dis_30(){   
-	if (query.adm[0] < 1 || query.adm[0] > 30){
-		printf("Wrong date");
-		return;
-	}
-}
-
+//Helper function to input all details of a record
 void inputdetails(){
 	int i;
-	
-	while(1){
+	//while loops are used for error handling. User is asked for input until valid input is received
+	//id
+	while(1 && !modify){//doesnt ask for ID if record is being modified
 		printf("Enter ID: ");
 		scanf("%d", &query.id);
 		if(chkunique(query.id))
 		break;
-		printf("Error: ID already exists. ID must be unique\n");
+		printf("Error: Invalid ID / ID already exists ID must be unique\n");
 	}
-
+	
+	//first name
 	printf("Enter patient's firstname: ");
 	scanf("%s", query.fname);
 	for(i = 0; query.fname[i]; i++){
     	query.fname[i] = tolower(query.fname[i]);
 	}
 	
+	//last name
 	printf("Enter patient's lastname: ");
 	scanf("%s", query.lname);
 	for(i = 0; query.lname[i]; i++){
     	query.lname[i] = tolower(query.lname[i]);
 	}
 	
+	//age
 	while(1){
 		printf("Enter patient's age: ");
 		scanf("%d", &query.age);
@@ -94,6 +75,7 @@ void inputdetails(){
 		printf("Error: Invalid Age Entered\n");
 	}
 	
+	//gender
 	while(1){
 		fflush(stdin);
 		printf("Enter gender(M/F): ");
@@ -103,7 +85,9 @@ void inputdetails(){
 		printf("Error: Enter either M or F\n");
 	}
 	
+	//Admission Date
 	while(1){
+		//Admission month
 		while(1){
 			printf("Enter Admission Month(mm): ");
 			scanf("%d", &query.adm[1]);
@@ -112,6 +96,7 @@ void inputdetails(){
 			printf("Wrong Month Entered");
 		}
 		
+		//Admission year
 		while(1){
 			printf("Enter Admission Year(yy): ");
 				scanf("%d", &query.adm[2]);
@@ -119,10 +104,12 @@ void inputdetails(){
 			break;
 			printf("Error: Invalid year(Years before 2020 not applicable)");	
 		}
-	
-			while(1){
+		
+		//Admission day
+		while(1){
 			printf("Enter Admission Day(dd): ");
 			scanf("%d", &query.adm[0]);
+			//nested if-else to check whether day lies within given month
 			if(query.adm[1]==2){
 				if(chkleap(query.adm[2])){
 					if(query.adm[0]>=1 && query.adm[0]<=29)
@@ -143,7 +130,8 @@ void inputdetails(){
 				printf("Error: Invalid Date\n");
 			}
 		}
-	
+		
+		//Discharge Month
 		while(1){
 			printf("Enter Discharge Month(mm): ");
 			scanf("%d", &query.dis[1]);
@@ -152,6 +140,7 @@ void inputdetails(){
 			printf("Wrong Month Entered");
 		}
 	
+		//Discharge Year
 		while(1){
 			printf("Enter Discharge Year(yy): ");
 			scanf("%d", &query.dis[2]);
@@ -160,9 +149,11 @@ void inputdetails(){
 			printf("Error: Invalid year(Years before 2020 not applicable)");	
 		}
 		
+		//Discharge Day
 		while(1){
 			printf("Enter Discharge Day(dd): ");
 			scanf("%d", &query.dis[0]);
+			//nested if-else to check whether day lies within given month
 			if(query.dis[1]==2){
 				if(chkleap(query.dis[2])){
 					if(query.dis[0]>=1 && query.dis[0]<=29)
@@ -183,12 +174,14 @@ void inputdetails(){
 				printf("Error: Invalid Date\n");
 			}
 		}
-		if(numofdays(query.adm)<numofdays(query.dis))
+		//checks whether admission date is not before discharge date
+		if(numofdays(query.adm)<=numofdays(query.dis))
 		break;
 		printf("Error: Admission Date cannot be after Discharge date\n");	
 	}
 }
 
+//helper function designed to return number of days given date is ahead of 1st Jan 2020
 int numofdays(int date[]){
 	int days=date[0]+(date[2]-20)*365;
 	if(date[1]>=3 && date[2]==20){
@@ -225,6 +218,18 @@ int numofdays(int date[]){
 	return --days;
 }
 
+//Used at various places to print details of patient record
+void printdetails(struct pdetails tmp){
+	printf("Patient ID: %d\n", tmp.id);
+	printf("Name: %s %s\n", tmp.fname, tmp.lname);
+	printf("Gender: %c\n", tmp.gender);
+	printf("Age: %d\n", tmp.age);
+	printf("Admission Date(ddmmyyyy): %2d-%2d-%d\n", tmp.adm[0], tmp.adm[1], tmp.adm[2]+2000);
+	printf("Discharge Date(ddmmyyyy): %2d-%2d-%d\n", tmp.dis[0], tmp.dis[1], tmp.dis[2]+2000);
+	printf("ZIP Code: %d\n", tmp.area);
+}
+
+//Lists all records according to order choosen by user(Point 5 and 6) 
 void megafunc(int switchreq){ 
     char ch;
 	FILE *ogfile;
@@ -232,7 +237,7 @@ void megafunc(int switchreq){
 	ogfile=fopen("pdetails.txt","r");
 	writeonly=fopen("ordering.txt","w");
 	while( ( ch = fgetc(ogfile) ) != EOF )
-        fputc(ch, writeonly);
+        fputc(ch, writeonly);//created a copy of original file(pdetails.txt) in ordering.txt
     fseek(ogfile, 0 , SEEK_SET);    
     fclose(writeonly);
 	fclose(ogfile);
@@ -244,48 +249,56 @@ void megafunc(int switchreq){
 		fclose(ogfile);
 		ogfile=fopen("pdetails.txt","r");
 		switch(switchreq){
+			//5a: List all records in ascending order according to patient's first name
 			case 0: while(fread(&query,sizeof(struct pdetails),1,ogfile)){
 			   			if (strcmp(query.fname,temp.fname)<0){
 			   				temp = query;
 						}
 					}
 					break;
+			//5b: List all records in ascending order according to patient's last name
 			case 1: while(fread(&query,sizeof(struct pdetails),1,ogfile)){
 			   			if (strcmp(query.lname,temp.lname)<0){
 			   				temp = query;
 						}
 					}
 					break;
+			//5c: List all records in ascending order according to patient's age
 			case 2: while(fread(&query,sizeof(struct pdetails),1,ogfile)){
 			   			if (query.age<temp.age){
 			   				temp = query;
 						}
 					}
 					break;
+			//5d: List all records in ascending order according to patient's admission date
 			case 3: while(fread(&query,sizeof(struct pdetails),1,ogfile)){
 			   			if (numofdays(query.adm)<numofdays(temp.adm)){
 			   				temp = query;
 						}
 					}
 					break;
+			//6a: List all records in descending order according to patient's first name
 			case 4: while(fread(&query,sizeof(struct pdetails),1,ogfile)){
 			   			if (strcmp(query.fname,temp.fname)>0){
 			   				temp = query;
 						}
 					}
 					break;
+			//6b: List all records in descending order according to patient's last name
 			case 5: while(fread(&query,sizeof(struct pdetails),1,ogfile)){
 			   			if (strcmp(query.lname,temp.lname)>0){
 			   				temp = query;
 						}
 					}
 					break;
+			//6c: List all records in descending order according to patient's age
 			case 6: while(fread(&query,sizeof(struct pdetails),1,ogfile)){
 			   			if (query.age>temp.age){
 			   				temp = query;
 						}
 					}
 					break;
+			//6d: List all records in descending order according to patient's discharge date
 			case 7: while(fread(&query,sizeof(struct pdetails),1,ogfile)){
 			   			if (numofdays(query.dis)>numofdays(temp.dis)){
 			   				temp = query;
@@ -294,7 +307,8 @@ void megafunc(int switchreq){
 					break;
 		}
 		fclose(ogfile);
-		printf("%s\n", temp.fname);
+		printdetails(temp);
+		//remove record stored in temp from pdetails
 		ogfile=fopen("pdetails.txt","r");
 		writeonly=fopen("copy.txt","w");
 		while(fread(&query,sizeof(struct pdetails),1,ogfile)){
@@ -312,23 +326,27 @@ void megafunc(int switchreq){
 	rename("ordering.txt","pdetails.txt");
 }
 
+//Lists all records according to range choosen by user(Point 7)
 void seventhfunc(int switchreq){ 
 	FILE *ogfile;
 	int i;
 	ogfile=fopen("pdetails.txt","r");
 	switch(switchreq){
+		//7a: prints all records with first letter of first name at most 10 letters ahead of user's given letter
 	case 0:	while(fread(&query, sizeof(struct pdetails), 1, ogfile)){
 				if(query.fname[0]-userletter<=10){
-					printf("%s\n", query.fname);
+					printdetails(query);
 				}
 			}
 			break;
+		//7b: prints all records with admission dates at most 10 days ahead of user's given date
 	case 1:	while(fread(&query, sizeof(struct pdetails), 1, ogfile)){
 				if(numofdays(query.adm)-usertruedate<=10){
-					printf("%s\n", query.fname);
+					printdetails(query);
 				}
 			}
 			break;
+		//7b: prints all records with admission dates lying in next 5 months ahead of user's given month
 	case 2:	for(i=0; i<=5; i++){
 				if(usermonth==13){
 					usermonth=1;
@@ -336,7 +354,7 @@ void seventhfunc(int switchreq){
 				fseek(ogfile, 0 , SEEK_SET); 
 				while(fread(&query, sizeof(struct pdetails), 1, ogfile)){
 					if(usermonth==query.adm[1]){
-						printf("%s\n", query.fname);
+						printdetails(query);
 					}
 				}
 				usermonth++;
@@ -346,6 +364,7 @@ void seventhfunc(int switchreq){
 	fclose(ogfile);
 }
 
+//Point 8:Entering male and female patients records seperately in two seperate files
 void seperate(){
 	struct pdetails tmp;
 	FILE *ogfile;
@@ -367,6 +386,7 @@ void seperate(){
 	printf("Two seperate files created successfully\n");
 }
 
+//adds patient record to main file
 void addrec(){
 	inputdetails();
 	FILE *file;
@@ -375,7 +395,7 @@ void addrec(){
 	fclose(file);
 }
 
-
+//deletes record from main file
 void delrec(){
 	int n,flag=0;
 	printf("Enter patient ID to be delete : ");
@@ -392,12 +412,13 @@ void delrec(){
 	if(flag==0){
 		printf("No such ID found!\n");
 	}else{
+		//remove record with given ID from pdetails
 		while(fread(&query,sizeof(struct pdetails),1,ogfile)){
 			if(query.id!=n){
 			   	fwrite(&query,sizeof(struct pdetails),1,tmpfile);
 			}
 		}
-			printf("Deleted patient details with id: %d\n", n);
+		printf("Deleted patient details with id: %d\n", n);
     }  
 	fclose(ogfile);
 	fclose(tmpfile);
@@ -405,9 +426,10 @@ void delrec(){
 	rename("tmp.txt","pdetails.txt");
 }
 
+//modify record data of patient by patient ID
 void modrec(){
-	int n,flag=0;
-	printf("\nEnter patient ID to be modify : ");
+	int n,idfound=0;
+	printf("Enter patient ID to be modify : ");
 	scanf("%d",&n);
 	FILE *ogfile;
 	FILE *tmpfile;
@@ -415,14 +437,15 @@ void modrec(){
 	tmpfile=fopen("tmp.txt","w");
 	while(fread(&query,sizeof(struct pdetails),1,ogfile)){
 		if(query.id==n){
-			   	flag = 1;
+			   	idfound = 1;
 		}
 	}
     fclose(ogfile);
     ogfile=fopen("pdetails.txt","r");
-	if(flag==0)
+	if(idfound==0)
 		printf("No such ID found!\n");
 	else{
+		modify=1;
 		struct pdetails tmp;
 		inputdetails();
 		while(fread(&tmp,sizeof(struct pdetails),1,ogfile)){
@@ -440,6 +463,7 @@ void modrec(){
 	rename("tmp.txt","pdetails.txt");
 }
 
+//returns total count of patients
 int totalcount(){
 	struct pdetails tmp;
 	int totalcount=0;
@@ -452,19 +476,22 @@ int totalcount(){
 	return totalcount;
 }
 
+//returns total count of male patients
 int gendercount(){
 	struct pdetails tmp;
 	int gendercount=0;
-	FILE *file;
+	FILE *file;	
 	file=fopen("pdetails.txt", "r");
 	while(fread(&tmp, sizeof(struct pdetails), 1, file)){
-		if(tmp.gender=='F'){
+		if(tmp.gender=='M'){
 			gendercount++;
 		}
 	}
 	fclose(file);
 	return gendercount;
 }
+
+//prints age and respective count of all patients
 void agecount(){
 	struct pdetails tmp;
 	int i,agecount[125]={0};
@@ -473,20 +500,24 @@ void agecount(){
 	while(fread(&tmp, sizeof(struct pdetails), 1, file)){
 		agecount[tmp.age]++;
 	}
-	for(i=0; i<125; i++){
+	for(i=0; i<120; i++){
 		if(agecount[i]!=0)
-		printf("There is/are %d people of age %d\n", agecount[i], i);
+		printf("%d person(s) of age %d\n", agecount[i], i);
 	}
 	fclose(file);
 }
+
+//prints area and respective count of all patients
 void areacount(){
 	int i=0,areacount[100][2];
 	struct pdetails tmp;
 }
+
+//driver function
 int main(){
 	int carryon=1, req, subreq;
 	while(carryon!=0){
-		printf("Which operation would you like to perform?[(1)Add/(2)Delete/(3)Modify/(4)Display summary reports/(5)List in ascending order/(6)List in descending order/(7)List records for specific range/(8)Seperate male and female into different files]");
+		printf("Which operation would you like to perform?\n(1)Add\n(2)Delete\n(3)Modify\n(4)Display summary reports\n(5)List in ascending order\n(6)List in descending order\n(7)List records for specific range\n(8)Seperate male and female into different files\n: ");
 		scanf("%d", &req);
 		switch(req){
 		case 1: addrec();
@@ -495,7 +526,7 @@ int main(){
 				break;
 		case 3:	modrec();
 				break;
-		case 4: printf("(1)Count of patients/(2)Count(based on gender)/(3)Age wise count/(4)Area wise count: ");
+		case 4: printf("(1)Count of patients\n(2)Count(based on gender)\n(3)Age wise count\n(4)Area wise count\n: ");
 				scanf("%d", &subreq);
 				switch(subreq){
 				case 1: printf("Total number of patients: %d\n", totalcount());
@@ -510,7 +541,7 @@ int main(){
 						break;
 				}
 				break;
-		case 5: printf("List all Records in ascending order according to (1)First Name/(2)Last Name/(3)Age/(4)Admission Date: ");
+		case 5: printf("List all Records in ascending order according to:\n(1)First Name\n(2)Last Name\n(3)Age\n(4)Admission Date\n: ");
 				scanf("%d", &subreq);
 				switch(subreq){
 				case 1: megafunc(0);
@@ -525,7 +556,7 @@ int main(){
 						break;
 				}
 				break;
-		case 6: printf("List all Records in descending order according to (1)First Name/(2)Last Name/(3)Age/(4)Discharge Date: ");
+		case 6: printf("List all Records in descending order according to:\n(1)First Name\n(2)Last Name\n(3)Age\n(4)Discharge Date\n: ");
 				scanf("%d", &subreq);
 				switch(subreq){
 				case 1: megafunc(4);
@@ -540,7 +571,7 @@ int main(){
 						break;
 				}
 				break;
-		case 7: printf("List Records in specific range(1)First Name/(2)Admission date/(3)Month: ");
+		case 7: printf("List Records in specific range:\n(1)First Name\n(2)Admission date\n(3)Month\n: ");
 				scanf("%d", &subreq);
 				switch(subreq){
 				case 1: printf("Enter first name: ");
