@@ -23,6 +23,171 @@ int chkleap(int year){
 	else
 	return 0;
 }
+int chkunique(int num){	
+    FILE *ogfile;
+	ogfile = fopen("pdetails.txt","r");
+	struct pdetails tmp;
+	while(fread(&tmp,sizeof(struct pdetails),1,ogfile)){
+		if(num == tmp.id){
+			   	return 0;
+		}
+	}
+	return 1;	
+}
+
+void month_ad_31(){   
+	if (query.adm[0] < 1 || query.adm[0] > 31){
+		printf("Wrong date");
+		return;
+	}
+}
+
+void month_ad_30(){   
+	if (query.adm[0] < 1 || query.adm[0] > 30){
+		printf("Wrong date");
+		return;
+	}
+}
+
+void month_dis_31(){   
+	if (query.adm[0] < 1 || query.adm[0] > 31){
+		printf("Wrong date");
+		return;
+	}
+}
+
+void month_dis_30(){   
+	if (query.adm[0] < 1 || query.adm[0] > 30){
+		printf("Wrong date");
+		return;
+	}
+}
+
+void inputdetails(){
+	int i;
+	
+	while(1){
+		printf("Enter ID: ");
+		scanf("%d", &query.id);
+		if(chkunique(query.id))
+		break;
+		printf("Error: ID already exists. ID must be unique\n");
+	}
+
+	printf("Enter patient's firstname: ");
+	scanf("%s", query.fname);
+	for(i = 0; query.fname[i]; i++){
+    	query.fname[i] = tolower(query.fname[i]);
+	}
+	
+	printf("Enter patient's lastname: ");
+	scanf("%s", query.lname);
+	for(i = 0; query.lname[i]; i++){
+    	query.lname[i] = tolower(query.lname[i]);
+	}
+	
+	while(1){
+		printf("Enter patient's age: ");
+		scanf("%d", &query.age);
+		if(query.age > 0 && query.age < 120)
+		break;
+		printf("Error: Invalid Age Entered\n");
+	}
+	
+	while(1){
+		fflush(stdin);
+		printf("Enter gender(M/F): ");
+		scanf("%c", &query.gender);
+		if(query.gender=='M' || query.gender=='F')
+		break;
+		printf("Error: Enter either M or F\n");
+	}
+	
+	while(1){
+		while(1){
+			printf("Enter Admission Month(mm): ");
+			scanf("%d", &query.adm[1]);
+			if (query.adm[1] >= 1 && query.adm[1] <= 12)
+			break;
+			printf("Wrong Month Entered");
+		}
+		
+		while(1){
+			printf("Enter Admission Year(yy): ");
+				scanf("%d", &query.adm[2]);
+			if(query.adm[2]>=20 && query.adm[2]<=99)
+			break;
+			printf("Error: Invalid year(Years before 2020 not applicable)");	
+		}
+	
+			while(1){
+			printf("Enter Admission Day(dd): ");
+			scanf("%d", &query.adm[0]);
+			if(query.adm[1]==2){
+				if(chkleap(query.adm[2])){
+					if(query.adm[0]>=1 && query.adm[0]<=29)
+					break;
+					printf("Error: Invalid Date\n");
+				}else{
+					if(query.adm[0]>=1 && query.adm[0]<=28)
+					break;
+					printf("Error: Invalid Date\n");
+				}
+			}else if(query.adm[1]==2 || query.adm[1]==4 || query.adm[1]==6 || query.adm[1]==9 || query.adm[1]==11){
+				if(query.adm[1]>=1 && query.adm[1]<=30)
+				break;
+				printf("Error: Invalid Date\n");
+			}else{
+				if(query.adm[1]>=1 && query.adm[1]<=31)
+				break;
+				printf("Error: Invalid Date\n");
+			}
+		}
+	
+		while(1){
+			printf("Enter Discharge Month(mm): ");
+			scanf("%d", &query.dis[1]);
+			if (query.dis[1] >= 1 && query.dis[1] <= 12)
+			break;
+			printf("Wrong Month Entered");
+		}
+	
+		while(1){
+			printf("Enter Discharge Year(yy): ");
+			scanf("%d", &query.dis[2]);
+			if(query.dis[2]>=20 && query.dis[2]<=99)
+			break;
+			printf("Error: Invalid year(Years before 2020 not applicable)");	
+		}
+		
+		while(1){
+			printf("Enter Discharge Day(dd): ");
+			scanf("%d", &query.dis[0]);
+			if(query.dis[1]==2){
+				if(chkleap(query.dis[2])){
+					if(query.dis[0]>=1 && query.dis[0]<=29)
+					break;
+					printf("Error: Invalid Date\n");
+				}else{
+					if(query.dis[0]>=1 && query.dis[0]<=28)
+					break;
+					printf("Error: Invalid Date\n");
+				}
+			}else if(query.dis[1]==2 || query.dis[1]==4 || query.dis[1]==6 || query.dis[1]==9 || query.dis[1]==11){
+				if(query.dis[1]>=1 && query.dis[1]<=30)
+				break;
+				printf("Error: Invalid Date\n");
+			}else{
+				if(query.dis[1]>=1 && query.dis[1]<=31)
+				break;
+				printf("Error: Invalid Date\n");
+			}
+		}
+		if(numofdays(query.adm)<numofdays(query.dis))
+		break;
+		printf("Error: Admission Date cannot be after Discharge date\n");	
+	}
+}
 
 int numofdays(int date[]){
 	int days=date[0]+(date[2]-20)*365;
@@ -203,29 +368,7 @@ void seperate(){
 }
 
 void addrec(){
-	printf("Enter patient id: ");
-	scanf("%d", &query.id);
-	printf("Enter fname: ");
-	scanf("%s", query.fname);
-	printf("Enter lname: ");
-	scanf("%s", query.lname);
-	printf("Enter age: ");
-	scanf("%d", &query.age);
-	fflush(stdin);
-	printf("Enter gender(M/F): ");
-	scanf("%c", &query.gender);
-	printf("Enter admission date:\ndd: ");
-	scanf("%d", &query.adm[0]);
-	printf("mm: ");
-	scanf("%d", &query.adm[1]);
-	printf("yy: ");
-	scanf("%d", &query.adm[2]);
-	printf("Enter discharge date:\ndd: ");
-	scanf("%d", &query.dis[0]);
-	printf("mm: ");
-	scanf("%d", &query.dis[1]);
-	printf("yy: ");
-	scanf("%d", &query.dis[2]);
+	inputdetails();
 	FILE *file;
 	file = fopen ("pdetails.txt", "a");
 	fwrite (&query, sizeof(struct pdetails), 1, file);
@@ -254,7 +397,7 @@ void delrec(){
 			   	fwrite(&query,sizeof(struct pdetails),1,tmpfile);
 			}
 		}
-			printf("Deleted patient details with id: %d!\n", n);
+			printf("Deleted patient details with id: %d\n", n);
     }  
 	fclose(ogfile);
 	fclose(tmpfile);
@@ -281,23 +424,12 @@ void modrec(){
 		printf("No such ID found!\n");
 	else{
 		struct pdetails tmp;
-		printf("Enter fname: ");
-		scanf("%s", tmp.fname);
-		printf("Enter lname: ");
-		scanf("%s", tmp.lname);
-		printf("Enter age: ");
-		scanf("%d", &tmp.age);
-		printf("Enter gender: ");
-		scanf("%s", tmp.gender);
-		printf("Enter admission date(ddmmyy): ");
-		scanf("%s", tmp.adm);
-		printf("Enter discharge date(ddmmyy): ");
-		scanf("%s", tmp.dis);
-		while(fread(&query,sizeof(struct pdetails),1,ogfile)){
-		   	if(query.id!=n){
-			   	fwrite(&query,sizeof(struct pdetails),1,tmpfile);
-			}else{
+		inputdetails();
+		while(fread(&tmp,sizeof(struct pdetails),1,ogfile)){
+		   	if(tmp.id!=n){
 			   	fwrite(&tmp,sizeof(struct pdetails),1,tmpfile);
+			}else{
+			   	fwrite(&query,sizeof(struct pdetails),1,tmpfile);
 				printf("\nModified record!");
 			}
 		}
