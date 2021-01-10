@@ -1,3 +1,6 @@
+//U19CS050
+/*Program to manage covid patient data of Surat city using a single text file
+through the menu options*/
 #include<stdio.h>
 #include<stdlib.h>
 #include<string.h>
@@ -12,7 +15,7 @@ struct pdetails{
 	int dis[3];
 	char gender;
 	int area;
-}query, modtmp;
+}query, modtmp, saviour;
 
 char userletter;
 int userdate[3], usermonth, usertruedate, modify=0;
@@ -33,9 +36,11 @@ int chkunique(int num){
 	struct pdetails tmp;
 	while(fread(&tmp,sizeof(struct pdetails),1,ogfile)){
 		if(num == tmp.id){
-			   	return 0;
+			fclose(ogfile);
+			return 0;
 		}
 	}
+	fclose(ogfile);
 	return 1;	
 }
 
@@ -47,8 +52,10 @@ void inputdetails(){
 	while(1 && !modify){//doesnt ask for ID if record is being modified
 		printf("Enter ID: ");
 		scanf("%d", &query.id);
-		if(chkunique(query.id))
-		break;
+		if(chkunique(query.id)){
+			modify=0;
+			break;
+		}
 		printf("Error: Invalid ID / ID already exists ID must be unique\n");
 	}
 	
@@ -85,6 +92,15 @@ void inputdetails(){
 		printf("Error: Enter either M or F\n");
 	}
 	
+	//area
+	while(1){
+		printf("Enter area code: ");
+		scanf("%d", &query.area);
+		if(query.area >=394000 && query.area <= 395999)
+		break;
+		printf("Error: Invalid area code entered\n");
+	}
+	
 	//Admission Date
 	while(1){
 		//Admission month
@@ -93,7 +109,7 @@ void inputdetails(){
 			scanf("%d", &query.adm[1]);
 			if (query.adm[1] >= 1 && query.adm[1] <= 12)
 			break;
-			printf("Wrong Month Entered");
+			printf("Wrong Month Entered\n");
 		}
 		
 		//Admission year
@@ -102,7 +118,7 @@ void inputdetails(){
 				scanf("%d", &query.adm[2]);
 			if(query.adm[2]>=20 && query.adm[2]<=99)
 			break;
-			printf("Error: Invalid year(Years before 2020 not applicable)");	
+			printf("Error: Invalid year(Years before 2020 not applicable)\n");	
 		}
 		
 		//Admission day
@@ -233,21 +249,25 @@ void printdetails(struct pdetails tmp){
 void megafunc(int switchreq){ 
     char ch;
 	FILE *ogfile;
-	FILE *writeonly;
+	FILE *tmpfile;
 	ogfile=fopen("pdetails.txt","r");
-	writeonly=fopen("ordering.txt","w");
-	while( ( ch = fgetc(ogfile) ) != EOF )
-        fputc(ch, writeonly);//created a copy of original file(pdetails.txt) in ordering.txt
-    fseek(ogfile, 0 , SEEK_SET);    
-    fclose(writeonly);
+	tmpfile=fopen("ordering.txt","w");
+//	while( ( ch = fgetc(ogfile) ) != EOF )
+//        fputc(ch, tmpfile);//created a copy of original file(pdetails.txt) in ordering.txt
+    while(fread(&query,sizeof(struct pdetails),1,ogfile)){
+		fwrite(&query,sizeof(struct pdetails),1,tmpfile);
+	}
+	fseek(ogfile, 0 , SEEK_SET);    
+    fclose(tmpfile);
 	fclose(ogfile);
-	int count = totalcount();
+	int count = totalcount(), index=1;
 	struct pdetails temp;
 	while (count!=0){   
 		ogfile=fopen("pdetails.txt","r");
 		fread(&temp,sizeof(struct pdetails),1,ogfile);
 		fclose(ogfile);
 		ogfile=fopen("pdetails.txt","r");
+		printf("\nSr No. %d:\n", index++);
 		switch(switchreq){
 			//5a: List all records in ascending order according to patient's first name
 			case 0: while(fread(&query,sizeof(struct pdetails),1,ogfile)){
@@ -310,15 +330,15 @@ void megafunc(int switchreq){
 		printdetails(temp);
 		//remove record stored in temp from pdetails
 		ogfile=fopen("pdetails.txt","r");
-		writeonly=fopen("copy.txt","w");
+		tmpfile=fopen("copy.txt","w");
 		while(fread(&query,sizeof(struct pdetails),1,ogfile)){
 			if(query.id!=temp.id){
-				fwrite(&query,sizeof(struct pdetails),1,writeonly);
+				fwrite(&query,sizeof(struct pdetails),1,tmpfile);
 			}
 		}
 		count--;
 		fclose(ogfile);
-		fclose(writeonly);
+		fclose(tmpfile);
 		remove("pdetails.txt");
 		rename("copy.txt","pdetails.txt");
 	}
@@ -334,14 +354,14 @@ void seventhfunc(int switchreq){
 	switch(switchreq){
 		//7a: prints all records with first letter of first name at most 10 letters ahead of user's given letter
 	case 0:	while(fread(&query, sizeof(struct pdetails), 1, ogfile)){
-				if(query.fname[0]-userletter<=10){
+				if(query.fname[0]-userletter<=10 && query.fname[0]-userletter>=0){
 					printdetails(query);
 				}
 			}
 			break;
 		//7b: prints all records with admission dates at most 10 days ahead of user's given date
 	case 1:	while(fread(&query, sizeof(struct pdetails), 1, ogfile)){
-				if(numofdays(query.adm)-usertruedate<=10){
+				if(numofdays(query.adm)-usertruedate<=10 && numofdays(query.adm)-usertruedate>=0){
 					printdetails(query);
 				}
 			}
@@ -384,6 +404,18 @@ void seperate(){
 	fclose(mfile);
 	fclose(ffile);
 	printf("Two seperate files created successfully\n");
+	mfile = fopen("mdetails.txt", "r");
+	printf("Records of Male patients:\n");
+	while(fread(&query, sizeof(struct pdetails), 1, mfile)){
+		printdetails(query);
+	}
+	fclose(mfile);
+	ffile = fopen("fdetails.txt", "r");
+	printf("\nRecords of Female patients:\n");
+	while(fread(&query, sizeof(struct pdetails), 1, ffile)){
+		printdetails(query);
+	}
+	fclose(ffile);
 }
 
 //adds patient record to main file
@@ -495,22 +527,43 @@ int gendercount(){
 void agecount(){
 	struct pdetails tmp;
 	int i,agecount[125]={0};
-	FILE *file;
-	file=fopen("pdetails.txt", "r");
-	while(fread(&tmp, sizeof(struct pdetails), 1, file)){
+	FILE *ogfile;
+	ogfile=fopen("pdetails.txt", "r");
+	while(fread(&tmp, sizeof(struct pdetails), 1, ogfile)){
 		agecount[tmp.age]++;
 	}
 	for(i=0; i<120; i++){
 		if(agecount[i]!=0)
 		printf("%d person(s) of age %d\n", agecount[i], i);
 	}
-	fclose(file);
+	fclose(ogfile);
 }
 
 //prints area and respective count of all patients
 void areacount(){
-	int i=0,areacount[100][2];
 	struct pdetails tmp;
+	int i,flag=0,iteration=0,count=0,areacount[100][2],zip, distinct=0;
+	FILE *ogfile;
+	ogfile=fopen("pdetails.txt", "r");
+	while(fread(&tmp, sizeof(struct pdetails), 1, ogfile)){
+		zip=tmp.area;
+		flag=0;
+		for(i=0; i<distinct; i++){
+			if(areacount[i][0]==zip){
+				areacount[i][1]++;
+				flag=1;
+			}
+		}
+		if(flag==0){
+			areacount[distinct][0]=zip;
+			areacount[distinct][1]=1;
+			distinct++;
+		}
+	}
+	for(i=0; i<distinct; i++){
+		printf("Person(s) in ZIP code %d: %d\n", areacount[i][0], areacount[i][1]);
+	}
+	fclose(ogfile);
 }
 
 //driver function
