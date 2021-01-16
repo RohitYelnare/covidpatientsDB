@@ -5,17 +5,8 @@ through the menu options*/
 #include<stdlib.h>
 #include<string.h>
 #include<ctype.h>
+#include "structures.h"
 
-struct pdetails{
-	int id;
-	char fname[20];
-	char lname[20];
-	int age;
-	int adm[3];
-	int dis[3];
-	char gender;
-	int area;
-}query, modtmp, saviour;
 
 char userletter;
 int userdate[3], usermonth, usertruedate, modify=0;
@@ -50,7 +41,7 @@ void inputdetails(){
 	//while loops are used for error handling. User is asked for input until valid input is received
 	//id
 	while(1 && !modify){//doesnt ask for ID if record is being modified
-		printf("Enter ID: ");
+		printf("Enter patient ID: ");
 		scanf("%d", &query.id);
 		if(chkunique(query.id)){
 			modify=0;
@@ -195,6 +186,36 @@ void inputdetails(){
 		break;
 		printf("Error: Admission Date cannot be after Discharge date\n");	
 	}
+	int docfound=0;
+	int docid;
+	FILE *readdoc;
+	FILE *relation;
+	while(1){
+		readdoc = fopen("ddetails.txt", "r" );
+	    while(fread(&querydoc, sizeof(struct ddetails), 1, readdoc)){
+			printf("Doctor: (ID:%d) %s %s\n", querydoc.id, querydoc.fname, querydoc.lname);
+		}
+		fclose(readdoc);
+		printf("Enter the Doctor ID to be Assigned:");
+		scanf("%d",&docid);
+		readdoc = fopen("ddetails.txt", "r" );
+    	while(fread(&querydoc, sizeof(struct ddetails), 1, readdoc)){
+			if(querydoc.id==docid){
+				docfound=1;
+				queryrelation.docid=docid;
+				queryrelation.patientid=query.id;
+				relation = fopen("relations.txt", "a");
+				fwrite(&queryrelation, sizeof(struct ddetails), 1, relation);
+				fclose(relation);
+				printf("docid: %d patientid:%d\n", queryrelation.docid, queryrelation.patientid);
+			}
+		}
+		if(!docfound){
+			printf("Invalid Doctor ID\n");
+		}else
+				break;
+		fclose(readdoc);
+	}
 }
 
 //helper function designed to return number of days given date is ahead of 1st Jan 2020
@@ -243,6 +264,7 @@ void printdetails(struct pdetails tmp){
 	printf("Admission Date(ddmmyyyy): %2d-%2d-%d\n", tmp.adm[0], tmp.adm[1], tmp.adm[2]+2000);
 	printf("Discharge Date(ddmmyyyy): %2d-%2d-%d\n", tmp.dis[0], tmp.dis[1], tmp.dis[2]+2000);
 	printf("ZIP Code: %d\n", tmp.area);
+//	printf("Doctor ID assigned: %d\n", tmp.doctorid);
 }
 
 //Lists all records according to order choosen by user(Point 5 and 6) 
@@ -252,8 +274,6 @@ void megafunc(int switchreq){
 	FILE *tmpfile;
 	ogfile=fopen("pdetails.txt","r");
 	tmpfile=fopen("ordering.txt","w");
-//	while( ( ch = fgetc(ogfile) ) != EOF )
-//        fputc(ch, tmpfile);//created a copy of original file(pdetails.txt) in ordering.txt
     while(fread(&query,sizeof(struct pdetails),1,ogfile)){
 		fwrite(&query,sizeof(struct pdetails),1,tmpfile);
 	}
@@ -568,6 +588,17 @@ void areacount(){
 
 //driver function
 int main(){
+	int staffpresent = 0 ;
+	int docfound=0;
+	FILE* readdoc;
+	readdoc = fopen("ddetails.txt", "r" );
+    if(fread(&querydoc, sizeof(struct ddetails), 1, readdoc) == 1 )
+		staffpresent++;
+	fclose(readdoc);
+	if(staffpresent == 0){
+		printf("Please Enter the data of doctors first");
+		return 0;
+	}
 	int carryon=1, req, subreq;
 	while(carryon!=0){
 		printf("Which operation would you like to perform?\n(1)Add\n(2)Delete\n(3)Modify\n(4)Display summary reports\n(5)List in ascending order\n(6)List in descending order\n(7)List records for specific range\n(8)Seperate male and female into different files\n: ");
